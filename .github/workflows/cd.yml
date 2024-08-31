@@ -24,10 +24,10 @@ jobs:
 
       - name: Convert Tag and Build Docker Image
         run: |
-          # Convert tag and repository name to lowercase
+          # Convert repository owner and tag name to lowercase
           LOWERCASE_REPO=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           TAG_NAME=$(echo "${{ github.ref_name }}" | tr '[:upper:]' '[:lower:]')
-          
+
           # Build and tag Docker image
           IMAGE_TAG="ghcr.io/$LOWERCASE_REPO/spring-petclinic:$TAG_NAME"
           docker build -t $IMAGE_TAG .
@@ -39,5 +39,6 @@ jobs:
       - name: Push Docker image to GitHub Container Registry
         run: |
           TAG_NAME=$(echo "${{ github.ref_name }}" | tr '[:upper:]' '[:lower:]')
-          docker push ghcr.io/${{ github.repository_owner | tr '[:upper:]' '[:lower:] }}/spring-petclinic:$TAG_NAME
-          docker push ghcr.io/${{ github.repository_owner | tr '[:upper:]' '[:lower:] }}/spring-petclinic:latest
+          LOWERCASE_REPO=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          docker push ghcr.io/$LOWERCASE_REPO/spring-petclinic:$TAG_NAME
+          docker push ghcr.io/$LOWERCASE_REPO/spring-petclinic:latest
