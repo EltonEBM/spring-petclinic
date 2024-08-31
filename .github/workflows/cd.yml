@@ -17,7 +17,8 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '17'
-          
+          distribution: 'temurin' # Use 'temurin' or another valid distribution
+
       - name: Convert repository owner and tag name to lowercase
         run: |
           LOWERCASE_REPO=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
