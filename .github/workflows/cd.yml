@@ -1,34 +1,39 @@
-name: Build and Deploy Spring Petclinic
+name: CD
 
 on:
   push:
-    branches:
-      - develop
-      - feature/*
+    tags:
+      - '*' # Trigger on any tag push
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: '17'
-          distribution: 'temurin'
+          distribution: 'temurin' # Use 'temurin' or another valid distribution
 
-      - name: Build with Maven
-        run: mvn clean package -DskipTests
+      - name: Convert repository owner and tag name to lowercase
+        run: |
+          LOWERCASE_REPO=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          TAG_NAME=$(echo "${{ github.ref_name }}" | tr '[:upper:]' '[:lower:]')
+          echo "LOWERCASE_REPO=$LOWERCASE_REPO" >> $GITHUB_ENV
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
 
       - name: Build Docker image
         run: |
-          LOWERCASE_REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          TAG_NAME=$(echo "v1.0.${{ github.run_number }}" | tr '[:upper:]' '[:lower:]')
           IMAGE_TAG="ghcr.io/$LOWERCASE_REPO/spring-petclinic:$TAG_NAME"
           docker build -t $IMAGE_TAG .
+          docker tag $IMAGE_TAG ghcr.io/$LOWERCASE_REPO/spring-petclinic:latest
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
 
       - name: Push Docker image to GitHub Container Registry
         run: |
