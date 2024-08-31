@@ -22,12 +22,16 @@ jobs:
       - name: Build with Maven
         run: mvn clean install
 
-      - name: Build Docker image
+      - name: Convert Tag and Build Docker Image
         run: |
+          # Convert tag and repository name to lowercase
+          LOWERCASE_REPO=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           TAG_NAME=$(echo "${{ github.ref_name }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/spring-petclinic:$TAG_NAME"
+          
+          # Build and tag Docker image
+          IMAGE_TAG="ghcr.io/$LOWERCASE_REPO/spring-petclinic:$TAG_NAME"
           docker build -t $IMAGE_TAG .
-          docker tag $IMAGE_TAG ghcr.io/${{ github.repository_owner }}/spring-petclinic:latest
+          docker tag $IMAGE_TAG ghcr.io/$LOWERCASE_REPO/spring-petclinic:latest
 
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
@@ -35,5 +39,5 @@ jobs:
       - name: Push Docker image to GitHub Container Registry
         run: |
           TAG_NAME=$(echo "${{ github.ref_name }}" | tr '[:upper:]' '[:lower:]')
-          docker push ghcr.io/${{ github.repository_owner }}/spring-petclinic:$TAG_NAME
-          docker push ghcr.io/${{ github.repository_owner }}/spring-petclinic:latest
+          docker push ghcr.io/${{ github.repository_owner | tr '[:upper:]' '[:lower:] }}/spring-petclinic:$TAG_NAME
+          docker push ghcr.io/${{ github.repository_owner | tr '[:upper:]' '[:lower:] }}/spring-petclinic:latest
