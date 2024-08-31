@@ -3,7 +3,7 @@ name: CI Pipeline
 on:
   push:
     branches:
-      - '*'  # Runs on any branch
+      - 'feature/*'  # Runs on branches starting with 'feature/'
   pull_request:
     branches:
       - '*'  # Runs on pull requests targeting any branch
