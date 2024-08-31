@@ -1,6 +1,6 @@
 # Use the official Maven image to build the application
 # This image has Maven installed and is based on OpenJDK 17
-FROM maven:3.8.6-openjdk-17 AS build
+FROM maven:3.8.6-openjdk-17-slim AS build
 
 # Set the working directory
 WORKDIR /app
