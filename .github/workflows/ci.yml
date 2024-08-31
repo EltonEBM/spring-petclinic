@@ -19,7 +19,7 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'  # Specify the Java distribution
+          distribution: 'temurin'
           java-version: '17'
 
       - name: Build with Maven
@@ -30,3 +30,42 @@ jobs:
 
       - name: Verify project is working
         run: mvn verify
+
+      - name: Deploy to EC2
+        env:
+          FEATURE_IP: ${{ secrets.FEATURE_IP }}  # EC2 instance IP from secrets
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}  # SSH private key from secrets
+        run: |
+          # Install SSH client
+          sudo apt-get update
+          sudo apt-get install -y openssh-client
+
+          # Create SSH key directory and add the private key
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          # Add EC2 instance to known hosts to prevent SSH authenticity warning
+          ssh-keyscan -H $FEATURE_IP >> ~/.ssh/known_hosts
+
+          # Copy the built JAR file to the EC2 instance
+          scp -i ~/.ssh/id_rsa target/spring-petclinic.jar ec2-user@$FEATURE_IP:/home/ec2-user/spring-petclinic.jar
+
+          # Restart the application on the EC2 instance
+          ssh -i ~/.ssh/id_rsa ec2-user@$FEATURE_IP << 'EOF'
+            # Stop any running application (if applicable)
+            sudo systemctl stop spring-petclinic || true
+
+            # Replace the old JAR file with the new one
+            sudo cp /home/ec2-user/spring-petclinic.jar /opt/spring-petclinic/spring-petclinic.jar
+
+            # Start the application
+            sudo systemctl start spring-petclinic
+          EOF
+
+      - name: Verify Deployment
+        env:
+          FEATURE_IP: ${{ secrets.FEATURE_IP }}  # EC2 instance IP from secrets
+        run: |
+          # Check if the application is accessible
+          curl -sSf http://$FEATURE_IP:8080 || (echo "Application not accessible" && exit 1)
