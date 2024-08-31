@@ -2,11 +2,14 @@ name: CD
 
 on:
   push:
-    tags:
-      - '*' # Trigger on any tag push
+    branches:
+      - '*'  # Runs on any branch
+  pull_request:
+    branches:
+      - '*'  # Runs on pull requests targeting any branch
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,7 +20,10 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '17'
-          distribution: 'temurin' # Use 'temurin' or another valid distribution
+          distribution: 'temurin'
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
 
       - name: Convert repository owner and tag name to lowercase
         run: |
