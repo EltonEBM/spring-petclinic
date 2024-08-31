@@ -24,13 +24,14 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/spring-petclinic:${{ github.ref_name }} .
-          docker tag ghcr.io/${{ github.repository_owner }}/spring-petclinic:${{ github.ref_name }} ghcr.io/${{ github.repository_owner }}/spring-petclinic:latest
+          IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/spring-petclinic:${{ github.ref_name,, }}" # Convert tag to lowercase
+          docker build -t $IMAGE_TAG .
+          docker tag $IMAGE_TAG ghcr.io/${{ github.repository_owner }}/spring-petclinic:latest
 
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
 
       - name: Push Docker image to GitHub Container Registry
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/spring-petclinic:${{ github.ref_name }}
+          docker push ghcr.io/${{ github.repository_owner }}/spring-petclinic:${{ github.ref_name,, }}
           docker push ghcr.io/${{ github.repository_owner }}/spring-petclinic:latest
