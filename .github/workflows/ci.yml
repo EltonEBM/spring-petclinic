@@ -49,15 +49,15 @@ jobs:
           ssh-keyscan -H $FEATURE_IP >> ~/.ssh/known_hosts
 
           # Copy the built JAR file to the EC2 instance
-          scp -i ~/.ssh/id_rsa target/spring-petclinic.jar ec2-user@$FEATURE_IP:/home/ec2-user/spring-petclinic.jar
+          scp -i ~/.ssh/id_rsa target/spring-petclinic.jar ubuntu@$FEATURE_IP:/home/ubuntu/spring-petclinic.jar
 
           # Restart the application on the EC2 instance
-          ssh -i ~/.ssh/id_rsa ec2-user@$FEATURE_IP << 'EOF'
+          ssh -i ~/.ssh/id_rsa ubuntu@$FEATURE_IP << 'EOF'
             # Stop any running application (if applicable)
             sudo systemctl stop spring-petclinic || true
 
             # Replace the old JAR file with the new one
-            sudo cp /home/ec2-user/spring-petclinic.jar /opt/spring-petclinic/spring-petclinic.jar
+            sudo cp /home/ubuntu/spring-petclinic.jar /opt/spring-petclinic/spring-petclinic.jar
 
             # Start the application
             sudo systemctl start spring-petclinic
