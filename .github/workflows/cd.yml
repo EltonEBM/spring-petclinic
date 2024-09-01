@@ -33,7 +33,7 @@ jobs:
         run: |
           IMAGE_TAG="ghcr.io/$LOWERCASE_REPO/spring-petclinic:$TAG_NAME"
           docker build -t $IMAGE_TAG .
-          docker tag $IMAGE_TAG ghcr.io/$LOWERCASE_REPO/spring-petclinic:latest
+          docker tag $IMAGE_TAG ghcr.io/$LOWERCASE_REPO/spring-petclinic
 
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
@@ -41,4 +41,4 @@ jobs:
       - name: Push Docker image to GitHub Container Registry
         run: |
           docker push ghcr.io/$LOWERCASE_REPO/spring-petclinic:$TAG_NAME
-          docker push ghcr.io/$LOWERCASE_REPO/spring-petclinic:latest
+        
