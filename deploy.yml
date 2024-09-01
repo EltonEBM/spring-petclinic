@@ -1,0 +1,50 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Enter the version (tag) to deploy to production"
+        required: true
+
+jobs:
+  check-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Get input version
+        id: get_version
+        run: echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          if git rev-parse "refs/tags/${{ env.VERSION }}" >/dev/null 2>&1; then
+            echo "Tag ${{ env.VERSION }} exists."
+            echo "TAG_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "Tag ${{ env.VERSION }} does not exist."
+            echo "TAG_EXISTS=false" >> $GITHUB_ENV
+          fi
+
+      - name: Fail if tag does not exist
+        if: env.TAG_EXISTS == 'false'
+        run: |
+          echo "The tag ${{ env.VERSION }} does not exist. Failing the workflow."
+          exit 1
+
+      - name: Deploy to production
+        if: env.TAG_EXISTS == 'true'
+        run: |
+          echo "Deploying version ${{ env.VERSION }} to production..."
+          # Add your deployment commands here
+          # For example, using SSH to deploy
+          # ssh user@your-server "cd /path/to/app && git fetch --tags && git checkout tags/${{ env.VERSION }} && ./deploy.sh"
+          echo "Deployment successful."
+
+      - name: Success message
+        if: env.TAG_EXISTS == 'true'
+        run: |
+          echo "Successfully deployed version ${{ env.VERSION }} to production."
