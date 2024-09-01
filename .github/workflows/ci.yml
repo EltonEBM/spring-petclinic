@@ -3,75 +3,75 @@ name: CI Pipeline
 on:
   push:
     branches:
-      - 'feature/*'  # Runs on branches starting with 'feature/'
+      - 'feature/*'  # 'feature/' ile başlayan dallarda çalışır
   pull_request:
     branches:
-      - '*'  # Runs on pull requests targeting any branch
+      - '*'  # Herhangi bir dalı hedefleyen çekme isteklerinde çalışır
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Kodları Al
         uses: actions/checkout@v3
 
-      - name: Set up JDK 17
+      - name: JDK 17 Kur
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Build with Maven
+      - name: Maven ile Derle
         run: mvn clean install
 
-      - name: Run tests
+      - name: Testleri Çalıştır
         run: mvn test
 
-      - name: Verify project is working
+      - name: Projeyi Doğrula
         run: mvn verify
 
-      - name: Deploy to EC2
+      - name: EC2’ye Dağıt
         env:
-          FEATURE_IP: ${{ secrets.FEATURE_IP }}  # EC2 instance IP from secrets
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}  # SSH private key from secrets
+          FEATURE_IP: ${{ secrets.FEATURE_IP }}  # EC2 IP adresi
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}  # SSH özel anahtarı
         run: |
-          # Install SSH client
+          # SSH istemcisini kur
           sudo apt-get update
           sudo apt-get install -y openssh-client
 
-          # Create SSH key directory and add the private key
+          # SSH anahtar dizinini oluştur ve özel anahtarı ekle
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-          # Add EC2 instance to known hosts to prevent SSH authenticity warning
+          # EC2'yi bilinen anahtarlar listesine ekle
           ssh-keyscan -H $FEATURE_IP >> ~/.ssh/known_hosts
 
-          # Copy the built JAR file to the EC2 instance
+          # Derlenmiş JAR dosyasını EC2'ye kopyala
           scp -i ~/.ssh/id_rsa target/spring-petclinic.jar ubuntu@$FEATURE_IP:/home/ubuntu/spring-petclinic.jar
 
-          # Restart the application on the EC2 instance
+          # EC2 üzerinde uygulamayı yeniden başlat
           ssh -i ~/.ssh/id_rsa ubuntu@$FEATURE_IP << 'EOF'
-            # Stop any running application (if applicable)
+            # Herhangi bir çalışan uygulamayı durdur (varsa)
             sudo systemctl stop spring-petclinic || true
 
-            # Replace the old JAR file with the new one
+            # Eski JAR dosyasını yeni dosyayla değiştir
             sudo cp /home/ubuntu/spring-petclinic.jar /opt/spring-petclinic/spring-petclinic.jar
 
-            # Start the application
+            # Uygulamayı başlat
             sudo systemctl start spring-petclinic
 
-            # Check the application status to ensure it's running
-            sudo systemctl status spring-petclinic || (echo "Application failed to start" && exit 1)
+            # Uygulamanın çalıştığını doğrula
+            sudo systemctl status spring-petclinic || (echo "Uygulama başlatılamadı" && exit 1)
           EOF
 
-      - name: Verify Deployment
+      - name: Dağıtımı Doğrula
         env:
-          FEATURE_IP: ${{ secrets.FEATURE_IP }}  # EC2 instance IP from secrets
+          FEATURE_IP: ${{ secrets.FEATURE_IP }}  # EC2 IP adresi
         run: |
-          # Wait a bit to ensure the application has time to start
+          # Uygulamanın başlama süresi için bekle
           sleep 30
 
-          # Check if the application is accessible
-          curl -sSf http://$FEATURE_IP:8080 || (echo "Application not accessible" && exit 1)
+          # Uygulamanın erişilebilir olduğunu kontrol et
+          curl -sSf http://$FEATURE_IP:8080 || (echo "Uygulama erişilemez" && exit 1)
