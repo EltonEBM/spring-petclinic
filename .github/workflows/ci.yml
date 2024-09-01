@@ -42,4 +42,4 @@ jobs:
           # Derlenmiş JAR dosyasını EC2'ye kopyala
           scp -i ~/.ssh/id_rsa target/* ubuntu@$FEATURE_IP:/home/ubuntu/spring-petclinic.jar
 
-          run: java -jar target/*.jar
+          run: ./mvnw package && java -jar target/*.jar
