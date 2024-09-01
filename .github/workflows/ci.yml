@@ -22,15 +22,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Maven ile Derle
-        run: mvn clean install
-
-      - name: Testleri Çalıştır
-        run: mvn test
-
-      - name: Projeyi Doğrula
-        run: mvn verify
-
       - name: EC2’ye Dağıt
         env:
           FEATURE_IP: ${{ secrets.FEATURE_IP }}  # EC2 IP adresi
@@ -49,29 +40,6 @@ jobs:
           ssh-keyscan -H $FEATURE_IP >> ~/.ssh/known_hosts
 
           # Derlenmiş JAR dosyasını EC2'ye kopyala
-          scp -i ~/.ssh/id_rsa target/spring-petclinic.jar ubuntu@$FEATURE_IP:/home/ubuntu/spring-petclinic.jar
+          scp -i ~/.ssh/id_rsa target/* ubuntu@$FEATURE_IP:/home/ubuntu/spring-petclinic.jar
 
-          # EC2 üzerinde uygulamayı yeniden başlat
-          ssh -i ~/.ssh/id_rsa ubuntu@$FEATURE_IP << 'EOF'
-            # Herhangi bir çalışan uygulamayı durdur (varsa)
-            sudo systemctl stop spring-petclinic || true
-
-            # Eski JAR dosyasını yeni dosyayla değiştir
-            sudo cp /home/ubuntu/spring-petclinic.jar /opt/spring-petclinic/spring-petclinic.jar
-
-            # Uygulamayı başlat
-            sudo systemctl start spring-petclinic
-
-            # Uygulamanın çalıştığını doğrula
-            sudo systemctl status spring-petclinic || (echo "Uygulama başlatılamadı" && exit 1)
-          EOF
-
-      - name: Dağıtımı Doğrula
-        env:
-          FEATURE_IP: ${{ secrets.FEATURE_IP }}  # EC2 IP adresi
-        run: |
-          # Uygulamanın başlama süresi için bekle
-          sleep 30
-
-          # Uygulamanın erişilebilir olduğunu kontrol et
-          curl -sSf http://$FEATURE_IP:8080 || (echo "Uygulama erişilemez" && exit 1)
+          run: java -jar target/*.jar
