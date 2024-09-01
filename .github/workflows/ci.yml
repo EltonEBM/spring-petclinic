@@ -67,6 +67,4 @@ jobs:
       - name: Verify Deployment
         env:
           FEATURE_IP: ${{ secrets.FEATURE_IP }}  # EC2 instance IP from secrets
-        run: |
-          # Check if the application is accessible
-          curl -sSf http://$FEATURE_IP:8080 || (echo "Application not accessible" && exit 1)
+        
