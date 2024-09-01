@@ -34,7 +34,7 @@ jobs:
       - name: Deploy to EC2
         env:
           FEATURE_IP: ${{ secrets.FEATURE_IP }}  # EC2 instance IP from secrets
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}  # SSH private key from secrets
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}  # SSH private key from secrets
         run: |
           # Install SSH client
           sudo apt-get update
@@ -42,7 +42,7 @@ jobs:
 
           # Create SSH key directory and add the private key
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
           # Add EC2 instance to known hosts to prevent SSH authenticity warning
