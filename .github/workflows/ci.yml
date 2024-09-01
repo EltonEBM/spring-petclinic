@@ -34,7 +34,7 @@ jobs:
       - name: Deploy to EC2
         env:
           FEATURE_IP: ${{ secrets.FEATURE_IP }}  # EC2 instance IP from secrets
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}  # SSH private key from secrets
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}  # SSH private key from secrets
         run: |
           # Install SSH client
           sudo apt-get update
@@ -42,29 +42,36 @@ jobs:
 
           # Create SSH key directory and add the private key
           mkdir -p ~/.ssh
-          echo "${{ secrets.PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
           # Add EC2 instance to known hosts to prevent SSH authenticity warning
           ssh-keyscan -H $FEATURE_IP >> ~/.ssh/known_hosts
 
           # Copy the built JAR file to the EC2 instance
-          scp -i ~/.ssh/id_rsa target/*.jar ubuntu@$FEATURE_IP:/home/ubuntu/spring-petclinic.jar
+          scp -i ~/.ssh/id_rsa target/spring-petclinic.jar ec2-user@$FEATURE_IP:/home/ec2-user/spring-petclinic.jar
 
           # Restart the application on the EC2 instance
-          ssh -i ~/.ssh/id_rsa ubuntu@$FEATURE_IP << 'EOF'
+          ssh -i ~/.ssh/id_rsa ec2-user@$FEATURE_IP << 'EOF'
             # Stop any running application (if applicable)
             sudo systemctl stop spring-petclinic || true
 
             # Replace the old JAR file with the new one
-            sudo cp /home/ubuntu/spring-petclinic.jar /opt/spring-petclinic/spring-petclinic.jar
+            sudo cp /home/ec2-user/spring-petclinic.jar /opt/spring-petclinic/spring-petclinic.jar
 
-            # Start the application with the CMD
+            # Start the application
             sudo systemctl start spring-petclinic
-            sudo nohup java -jar /opt/spring-petclinic/spring-petclinic.jar &
+
+            # Check the application status to ensure it's running
+            sudo systemctl status spring-petclinic || (echo "Application failed to start" && exit 1)
           EOF
 
       - name: Verify Deployment
         env:
           FEATURE_IP: ${{ secrets.FEATURE_IP }}  # EC2 instance IP from secrets
-        
+        run: |
+          # Wait a bit to ensure the application has time to start
+          sleep 30
+
+          # Check if the application is accessible
+          curl -sSf http://$FEATURE_IP:8080 || (echo "Application not accessible" && exit 1)
