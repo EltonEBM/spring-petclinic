@@ -1,9 +1,12 @@
-name: CI for Feature Branch
+name: CI for Feature Branch and Pull Request
 
 on:
   push:
     branches:
-      - 'feature/*'  # This will trigger on any branch that starts with 'feature/'
+      - 'feature/*'   # Trigger on any feature branch
+  pull_request:
+    branches:
+      - '*'           # Trigger on any pull request to any branch
 
 jobs:
   build-and-deploy:
@@ -23,10 +26,10 @@ jobs:
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.FEATURE_IP }} << 'EOF'
           cd /path/to/your/project
 
-          # Pull the latest changes from the feature branch
+          # Pull the latest changes from the branch
           git pull origin ${{ github.ref_name }}
 
-          # Build the Docker image
+          # Build the Docker image using the Dockerfile in the feature branch
           docker build -t spring-petclinic-feature:${{ github.sha }} .
 
           # Stop and remove any existing container running on port 8080
