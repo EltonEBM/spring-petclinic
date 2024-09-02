@@ -36,10 +36,6 @@ jobs:
           # Ensure the Dockerfile from the feature branch is used
           docker build -t spring-petclinic-feature:${{ github.sha }} -f Dockerfile .
 
-          # Stop and remove any existing container running on port 8080
-          docker stop spring-petclinic-container || true
-          docker rm spring-petclinic-container || true
-
           # Run the new Docker container on port 8080
           docker run -d --name spring-petclinic-container -p 8080:8080 spring-petclinic-feature:${{ github.sha }}
 
