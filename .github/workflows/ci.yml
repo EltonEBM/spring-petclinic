@@ -1,4 +1,4 @@
-name: CI for Feature Branch and Pull Request
+name: CI for Pull Request and Feature Branch
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - 'feature/*'   # Trigger on any feature branch
   pull_request:
     branches:
-      - '*'           # Trigger on any pull request to any branch
+      - 'develop'     # Trigger on any pull request to develop branch
 
 jobs:
   build-and-deploy:
@@ -16,7 +16,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
       with:
-        ref: ${{ github.ref_name }}  # Ensure it checks out the correct branch
+        ref: ${{ github.event.pull_request.head.ref }}  # Checkout the source branch of the PR
 
     - name: Set up SSH
       uses: webfactory/ssh-agent@v0.7.0
@@ -28,10 +28,10 @@ jobs:
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.FEATURE_IP }} << 'EOF'
           cd /path/to/your/project
 
-          # Pull the latest changes from the branch
-          git fetch origin ${{ github.ref_name }}
-          git checkout ${{ github.ref_name }}
-          git pull origin ${{ github.ref_name }}
+          # Pull the latest changes from the correct branch
+          git fetch origin ${{ github.event.pull_request.head.ref }}
+          git checkout ${{ github.event.pull_request.head.ref }}
+          git pull origin ${{ github.event.pull_request.head.ref }}
 
           # Ensure the Dockerfile from the feature branch is used
           docker build -t spring-petclinic-feature:${{ github.sha }} -f Dockerfile .
@@ -45,3 +45,11 @@ jobs:
 
           echo "Application is running on port 8080 at ${FEATURE_IP}"
         EOF
+
+    - name: Notify success
+      if: success()
+      run: echo "The application was successfully deployed to EC2 and is running on port 8080."
+
+    - name: Notify failure
+      if: failure()
+      run: echo "The deployment failed. Please check the logs for details."
