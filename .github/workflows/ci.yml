@@ -39,9 +39,6 @@ jobs:
           # Run the new Docker container on port 8080
           docker run -d --name spring-petclinic-container -p 8080:8080 spring-petclinic-feature:${{ github.sha }}
 
-          echo "Application is running on port 8080 at ${FEATURE_IP}"
-        EOF
-
     - name: Notify success
       if: success()
       run: echo "The application was successfully deployed to EC2 and is running on port 8080."
