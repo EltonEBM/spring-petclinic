@@ -15,6 +15,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+      with:
+        ref: ${{ github.ref_name }}  # Ensure it checks out the correct branch
 
     - name: Set up SSH
       uses: webfactory/ssh-agent@v0.7.0
@@ -27,10 +29,12 @@ jobs:
           cd /path/to/your/project
 
           # Pull the latest changes from the branch
+          git fetch origin ${{ github.ref_name }}
+          git checkout ${{ github.ref_name }}
           git pull origin ${{ github.ref_name }}
 
-          # Build the Docker image using the Dockerfile in the feature branch
-          docker build -t spring-petclinic-feature:${{ github.sha }} .
+          # Ensure the Dockerfile from the feature branch is used
+          docker build -t spring-petclinic-feature:${{ github.sha }} -f Dockerfile .
 
           # Stop and remove any existing container running on port 8080
           docker stop spring-petclinic-container || true
