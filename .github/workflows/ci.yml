@@ -1,32 +1,27 @@
-name: CI for Pull Request and Feature Branch
+name: CI for Develop Branch Pull Requests
 
 on:
-  push:
-    branches:
-      - 'feature/*'   # Trigger on any feature branch
   pull_request:
     branches:
-      - 'develop'     # Trigger on any pull request to develop branch
+      - 'develop'  # Pull request develop branch'ine açıldığında çalışır
 
 jobs:
-  build-and-deploy:
+  deploy-to-ec2:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-      with:
-        ref: ${{ github.event.pull_request.head.ref }}  # Checkout the source branch of the PR
 
     - name: Set up SSH
       uses: webfactory/ssh-agent@v0.7.0
       with:
-        ssh-private-key: ${{ secrets.PRIVATE_KEY }}
+        ssh-private-key: ${{ secrets.PRIVATE_KEY }}  # EC2 makinenizin private key'i
 
-    - name: SSH into EC2, Install Docker, and Build Docker Image
+    - name: SSH into EC2 and deploy Docker image
       run: |
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.FEATURE_IP }} << 'EOF'
-          # Update package list and install Docker if not installed
+          # Docker kurulumu kontrol et, yoksa yükle
           if ! command -v docker &> /dev/null
           then
               sudo apt-get update
@@ -35,37 +30,29 @@ jobs:
               sudo systemctl enable docker
           fi
 
-          # Navigate to your project directory
-          cd /actual/path/to/your/project  # Replace with the correct path
-
-          # Ensure the Git repository exists
-          if [ ! -d ".git" ]; then
-              echo "Error: Not a git repository. Exiting."
-              exit 1
-          fi
-
-          # Pull the latest changes from the correct branch
-          git fetch origin ${{ github.event.pull_request.head.ref }}
-          git checkout ${{ github.event.pull_request.head.ref }}
-          git pull origin ${{ github.event.pull_request.head.ref }}
-
-          # Ensure the Dockerfile from the feature branch is used
-          docker build -t spring-petclinic-feature:${{ github.sha }} -f Dockerfile .
-
-          # Stop and remove any existing container running on port 8080
+          # Önceki container'i durdur ve kaldır
           docker stop spring-petclinic-container || true
           docker rm spring-petclinic-container || true
 
-          # Run the new Docker container on port 8080
-          docker run -d --name spring-petclinic-container -p 8080:8080 spring-petclinic-feature:${{ github.sha }}
+          # Docker imajını GitHub Container Registry'den çek
+          docker pull ghcr.io/eltonebm/spring-petclinic:latest  # 'username' yerine kendi GitHub kullanıcı adınızı yazın
 
-          echo "Application is running on port 8080 at ${{ secrets.FEATURE_IP }}"
+          # Yeni Docker container'ı başlat
+          docker run -d --name spring-petclinic-container -p 8080:8080 ghcr.io/eltonebm/spring-petclinic:latest  # 'username' yerine kendi GitHub kullanıcı adınızı yazın
+
+          # Uygulamanın çalışıp çalışmadığını kontrol et
+          if curl -s http://localhost:8080 | grep "Welcome to Spring Petclinic" > /dev/null; then
+            echo "Spring Petclinic is up and running!"
+          else
+            echo "Failed to start Spring Petclinic." >&2
+            exit 1
+          fi
         EOF
 
     - name: Notify success
       if: success()
-      run: echo "The application was successfully deployed to EC2 and is running on port 8080."
+      run: echo "Deployment was successful! The application is running at http://${{ secrets.EC2_PUBLIC_IP }}:8080"
 
     - name: Notify failure
       if: failure()
-      run: echo "The deployment failed. Please check the logs for details."
+      run: echo "Deployment failed. Please check the logs for details."
