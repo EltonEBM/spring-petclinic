@@ -24,10 +24,6 @@ jobs:
               sudo apt-get update
               sudo apt-get install -y docker.io
               sudo systemctl start docker
-              sudo systemctl enable docker
-
-          docker stop spring-petclinic-container || true
-          docker rm spring-petclinic-container || true
 
           docker pull ghcr.io/eltonebm/spring-petclinic:assa
 
