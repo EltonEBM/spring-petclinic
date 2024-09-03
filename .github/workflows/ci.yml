@@ -25,6 +25,6 @@ jobs:
               sudo apt-get install -y docker.io
               sudo systemctl start docker
 
-          docker pull ghcr.io/eltonebm/spring-petclinic:assa
+          sudo docker pull ghcr.io/eltonebm/spring-petclinic:assa
 
-          sudo docker container run -d --name spring-petclinic -p 8080:8080 ghcr.io/eltonebm/spring-petclinic
+          sudo docker container run -d --name spring-petclinic -p 8080:8080 ghcr.io/eltonebm/spring-petclinic:assa
