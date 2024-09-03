@@ -20,10 +20,14 @@ jobs:
 
     - name: SSH into EC2 and deploy Docker image
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/authorized_keys ubuntu@${{ secrets.FEATURE_IP }}
-              sudo apt-get update
-              sudo apt-get install -y docker.io
-              sudo systemctl start docker
+       ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.FEATURE_IP }} << 'EOF'
+       sudo apt-get update
+       sudo apt-get install -y docker.io
+       sudo systemctl start docker
+       sudo docker pull ghcr.io/eltonebm/spring-petclinic:assa
+       sudo docker container run -d --name spring-petclinic -p 8080:8080 ghcr.io/eltonebm/spring-petclinic:assa
+       EOF
+
 
           sudo docker pull ghcr.io/eltonebm/spring-petclinic:assa
 
