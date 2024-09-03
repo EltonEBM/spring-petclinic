@@ -27,7 +27,8 @@ jobs:
        sudo docker pull ghcr.io/eltonebm/spring-petclinic:assa
        sudo docker container run -d --name spring-petclinic -p 8080:8080 ghcr.io/eltonebm/spring-petclinic:assa
        EOF
-
+          docker stop spring-petclinic-container || true
+          docker rm spring-petclinic-container || true
 
           sudo docker pull ghcr.io/eltonebm/spring-petclinic:assa
 
