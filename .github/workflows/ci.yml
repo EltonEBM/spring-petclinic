@@ -25,13 +25,10 @@ jobs:
          sudo apt-get install -y docker.io
          sudo systemctl start docker
 
-         # Önceki container'i durdur ve kaldır
          sudo docker stop spring-petclinic || true
          sudo docker rm spring-petclinic || true
 
-         # Yeni Docker imajını çek
          sudo docker pull ghcr.io/eltonebm/spring-petclinic:assa
 
-         # Yeni konteyneri başlat
-         sudo docker container run -d --name spring-petclinic -p 8080:8080 ghcr.io/eltonebm/spring-petclinic:assa
+         sudo docker container run --name spring-petclinic -p 8080:8080 ghcr.io/eltonebm/spring-petclinic:assa
        EOF
