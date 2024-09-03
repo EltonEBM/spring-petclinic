@@ -3,7 +3,7 @@ name: CI for Develop Branch Pull Requests
 on:
   pull_request:
     branches:
-      - 'develop'  # Pull request develop branch'ine açıldığında çalışır
+      - 'develop'
 
 jobs:
   deploy-to-ec2:
@@ -16,12 +16,11 @@ jobs:
     - name: Set up SSH
       uses: webfactory/ssh-agent@v0.7.0
       with:
-        ssh-private-key: ${{ secrets.PRIVATE_KEY }}  # EC2 makinenizin private key'i
+        ssh-private-key: ${{ secrets.PRIVATE_KEY }} 
 
     - name: SSH into EC2 and deploy Docker image
       run: |
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.FEATURE_IP }} << 'EOF'
-          # Docker kurulumu kontrol et, yoksa yükle
           if ! command -v docker &> /dev/null
           then
               sudo apt-get update
@@ -30,29 +29,9 @@ jobs:
               sudo systemctl enable docker
           fi
 
-          # Önceki container'i durdur ve kaldır
           docker stop spring-petclinic-container || true
           docker rm spring-petclinic-container || true
 
-          # Docker imajını GitHub Container Registry'den çek
-          docker pull ghcr.io/eltonebm/spring-petclinic:latest  # 'username' yerine kendi GitHub kullanıcı adınızı yazın
+          docker pull ghcr.io/eltonebm/spring-petclinic:latest
 
-          # Yeni Docker container'ı başlat
-          docker run -d --name spring-petclinic-container -p 8080:8080 ghcr.io/eltonebm/spring-petclinic:latest  # 'username' yerine kendi GitHub kullanıcı adınızı yazın
-
-          # Uygulamanın çalışıp çalışmadığını kontrol et
-          if curl -s http://localhost:8080 | grep "Welcome to Spring Petclinic" > /dev/null; then
-            echo "Spring Petclinic is up and running!"
-          else
-            echo "Failed to start Spring Petclinic." >&2
-            exit 1
-          fi
-        EOF
-
-    - name: Notify success
-      if: success()
-      run: echo "Deployment was successful! The application is running at http://${{ secrets.EC2_PUBLIC_IP }}:8080"
-
-    - name: Notify failure
-      if: failure()
-      run: echo "Deployment failed. Please check the logs for details."
+          docker run -d --name spring-petclinic-container -p 8080:8080 ghcr.io/eltonebm/spring-petclinic:latest
