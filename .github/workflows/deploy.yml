@@ -40,14 +40,16 @@ jobs:
           echo "version_exists=false" >> $GITHUB_ENV
         fi
 
+    - name: Anahtarları Yükle
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
     - name: SSH ile EC2 Üzerinde Dağıtım
       if: env.version_exists == 'true'
-      env:
-        MAIN_KEY: ${{ secrets.MAIN_KEY }}
-        MAIN_IP: ${{ secrets.MAIN_IP }}
       run: |
         echo "Sürüm ${{ github.event.inputs.version }} üretime dağıtılıyor..."
-        ssh -o StrictHostKeyChecking=no -i home/ubuntu/~/.ssh/id_rsa ubuntu@$MAIN_IP << EOF
+        ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.FEATURE_IP }} << EOF
           # Docker'ın kurulu olup olmadığını kontrol et, yoksa kur
           if ! command -v docker &> /dev/null
           then
