@@ -47,7 +47,7 @@ jobs:
         MAIN_IP: ${{ secrets.MAIN_IP }}
       run: |
         echo "Sürüm ${{ github.event.inputs.version }} üretime dağıtılıyor..."
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$MAIN_IP << EOF
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/authorized_keys ubuntu@$MAIN_IP << EOF
           # Docker'ın kurulu olup olmadığını kontrol et, yoksa kur
           if ! command -v docker &> /dev/null
           then
