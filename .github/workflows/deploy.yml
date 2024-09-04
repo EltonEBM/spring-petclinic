@@ -1,50 +1,76 @@
-name: Deploy to Production
+name: Üretime Dağıtım
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Enter the version (tag) to deploy to production"
+        description: 'Dağıtmak istediğiniz sürüm etiketi'
         required: true
+        type: string
 
 jobs:
-  check-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Kodu Çek
+      uses: actions/checkout@v3
 
-      - name: Get input version
-        id: get_version
-        run: echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+    - name: JDK Kurulum
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
 
-      - name: Check if tag exists
-        id: check_tag
-        run: |
-          if git rev-parse "refs/tags/${{ env.VERSION }}" >/dev/null 2>&1; then
-            echo "Tag ${{ env.VERSION }} exists."
-            echo "TAG_EXISTS=true" >> $GITHUB_ENV
-          else
-            echo "Tag ${{ env.VERSION }} does not exist."
-            echo "TAG_EXISTS=false" >> $GITHUB_ENV
+    - name: Sürüm Etiketini Kontrol Et
+      id: check_tag
+      run: |
+        TAG=${{ github.event.inputs.version }}
+        echo "Etiket $TAG kontrol ediliyor..."
+
+        # Tüm etiketleri çek
+        git fetch --tags
+
+        # Etiketin var olup olmadığını kontrol et
+        if git rev-parse "$TAG" >/dev/null 2>&1; then
+          echo "Etiket $TAG mevcut."
+          echo "version_exists=true" >> $GITHUB_ENV
+        else
+          echo "Etiket $TAG mevcut değil."
+          echo "version_exists=false" >> $GITHUB_ENV
+        fi
+
+    - name: SSH ile EC2 Üzerinde Dağıtım
+      if: env.version_exists == 'true'
+      env:
+        MAIN_KEY: ${{ secrets.MAIN_KEY }}
+        MAIN_IP: ${{ secrets.MAIN_IP }}
+      run: |
+        echo "Sürüm ${{ github.event.inputs.version }} üretime dağıtılıyor..."
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$MAIN_IP << EOF
+          # Docker'ın kurulu olup olmadığını kontrol et, yoksa kur
+          if ! command -v docker &> /dev/null
+          then
+              sudo apt-get update
+              sudo apt-get install -y docker.io
+              sudo systemctl start docker
+              sudo systemctl enable docker
           fi
 
-      - name: Fail if tag does not exist
-        if: env.TAG_EXISTS == 'false'
-        run: |
-          echo "The tag ${{ env.VERSION }} does not exist. Failing the workflow."
-          exit 1
+          # Önceki container'ı durdur ve kaldır
+          docker stop spring-petclinic || true
+          docker rm spring-petclinic || true
 
-      - name: Deploy to production
-        if: env.TAG_EXISTS == 'true'
-        run: |
-          echo "Deploying version ${{ env.VERSION }} to production..."
-          # Add your deployment commands here
-          # For example, using SSH to deploy
-          # ssh user@your-server "cd /path/to/app && git fetch --tags && git checkout tags/${{ env.VERSION }} && ./deploy.sh"
-          echo "Deployment successful."
+          # Yeni imajı çek
+          sudo docker pull ghcr.io/eltonebm/spring-petclinic:${{ github.event.inputs.version }}
 
-      - name: Success message
-        if: env.TAG_EXISTS == 'true'
-        run: |
-          echo "Successfully deployed version ${{ env.VERSION }} to production."
+          # Yeni container'ı çalıştır
+          sudo docker run -d --name spring-petclinic -p 8080:8080 ghcr.io/eltonebm/spring-petclinic:${{ github.event.inputs.version }}
+
+          echo "Dağıtım başarılı."
+        EOF
+
+    - name: Dağıtım Başarısız
+      if: env.version_exists == 'false'
+      run: |
+        echo "Dağıtım başarısız. Etiket ${{ github.event.inputs.version }} mevcut değil."
