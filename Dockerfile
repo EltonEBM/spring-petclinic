@@ -1,14 +1,10 @@
-# Use a base image with JDK 17
-FROM openjdk:17-jdk-slim
+FROM openjdk:17-jdk-alpine
 
-# Set the working directory in the container
+# Container'da çalışma dizinini ayarlayın
 WORKDIR /app
 
-# Copy the entire target directory to the working directory in the container
-COPY target/ /app/
+# Mevcut dizin içeriğini container'a kopyalayın
+COPY . /app
 
-# Expose the port the application will run on
-EXPOSE 8080
-
-# Run the Spring Boot application using the exec form of CMD
-CMD ["java", "-jar", "target/*"]
+# Uygulamayı çalıştırın
+CMD ["java", "-jar", "target/spring-petclinic-3.3.0-SNAPSHOT.jar"]
