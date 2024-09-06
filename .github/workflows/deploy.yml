@@ -1,10 +1,10 @@
-name: Üretime Dağıtım
+name: Deploy to production
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Dağıtmak istediğiniz sürüm etiketi'
+        description: 'Tag'
         required: true
         type: string
 
@@ -13,44 +13,47 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Kodu Çek
+    - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: JDK Kurulum
+    - name: Setup JDK
       uses: actions/setup-java@v3
       with:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Sürüm Etiketini Kontrol Et
+    - name: Check Tag
       id: check_tag
       run: |
         TAG=${{ github.event.inputs.version }}
-        echo "Etiket $TAG kontrol ediliyor..."
+        echo "Checking tag $TAG..."
 
-        # Tüm etiketleri çek
+        # Fetch all tags
         git fetch --tags
 
-        # Etiketin var olup olmadığını kontrol et
+        # Check if the tag exists
         if git rev-parse "$TAG" >/dev/null 2>&1; then
-          echo "Etiket $TAG mevcut."
+          echo "Tag $TAG exists."
           echo "version_exists=true" >> $GITHUB_ENV
         else
-          echo "Etiket $TAG mevcut değil."
+          echo "Tag $TAG does not exist."
           echo "version_exists=false" >> $GITHUB_ENV
         fi
 
-    - name: Anahtarları Yükle
+    - name: Print version_exists
+      run: echo "version_exists=${{ env.version_exists }}"
+
+    - name: Load SSH Keys
       uses: webfactory/ssh-agent@v0.7.0
       with:
         ssh-private-key: ${{ secrets.MAIN_KEY }}
 
-    - name: SSH ile EC2 Üzerinde Dağıtım
+    - name: Deploy with SSH
       if: env.version_exists == 'true'
       run: |
-        echo "Sürüm ${{ github.event.inputs.version }} üretime dağıtılıyor..."
+        echo "Deploying version ${{ github.event.inputs.version }} to production..."
         ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.MAIN_IP }} << EOF
-          # Docker'ın kurulu olup olmadığını kontrol et, yoksa kur
+          # Check if Docker is installed, install if not
           if ! command -v docker &> /dev/null
           then
               sudo apt-get update
@@ -59,20 +62,20 @@ jobs:
               sudo systemctl enable docker
           fi
 
-          # Önceki container'ı durdur ve kaldır
+          # Stop and remove previous container
           docker stop spring-petclinic || true
           docker rm spring-petclinic || true
 
-          # Yeni imajı çek
+          # Pull new image
           sudo docker pull ghcr.io/eltonebm/spring-petclinic:${{ github.event.inputs.version }}
 
-          # Yeni container'ı çalıştır
+          # Run new container
           sudo docker run -d --name spring-petclinic -p 8080:8080 ghcr.io/eltonebm/spring-petclinic:${{ github.event.inputs.version }}
 
-          echo "Dağıtım başarılı."
+          echo "Deployment successful."
         EOF
 
-    - name: Dağıtım Başarısız
+    - name: Deployment Failed
       if: env.version_exists == 'false'
       run: |
-        echo "Dağıtım başarısız. Etiket ${{ github.event.inputs.version }} mevcut değil."
+        echo "Deployment failed. Tag ${{ github.event.inputs.version }} does not exist."
