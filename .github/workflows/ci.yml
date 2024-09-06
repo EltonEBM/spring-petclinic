@@ -28,7 +28,7 @@ jobs:
          sudo docker stop spring-petclinic || true
          sudo docker rm spring-petclinic || true
 
-         sudo docker pull ghcr.io/eltonebm/spring-petclinic:peyser
+         sudo docker pull ghcr.io/eltonebm/spring-petclinic:Fizi
 
-         sudo docker run -d --name spring-petclinic -p 8080:8080 ghcr.io/eltonebm/spring-petclinic:peyser
+         sudo docker run -d --name spring-petclinic -p 8080:8080 ghcr.io/eltonebm/spring-petclinic:Fizi
        EOF
