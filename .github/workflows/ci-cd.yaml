@@ -101,7 +101,7 @@ jobs:
                   image: ${{ secrets.ECR_REPO_URL }}:latest
                   ports:
                   - containerPort: 8080
-            progressDeadlineSeconds: 600  # Zaman aşımını artırdık
+            progressDeadlineSeconds: 1800  # Zaman aşımını artırdık
           EOF
 
       - name: Update Kubernetes deployment image
