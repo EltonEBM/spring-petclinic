@@ -17,6 +17,8 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: '17'
+          distribution: 'temurin'  # Specify the distribution
+          cache: 'maven'            # Optional: Enable caching for Maven
 
       - name: Log in to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
