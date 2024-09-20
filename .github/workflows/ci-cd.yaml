@@ -73,7 +73,36 @@ jobs:
         run: |
           echo "${{ secrets.KUBECONFIG_DATA }}" | base64 --decode > $HOME/.kube/config
 
-      - name: Deploy to Kubernetes
+      - name: Apply Kubernetes deployment (if not exists)
+        run: |
+          kubectl apply -f - <<EOF
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: spring-petclinic
+            labels:
+              app: spring-petclinic
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: spring-petclinic
+            template:
+              metadata:
+                labels:
+                  app: spring-petclinic
+              spec:
+                containers:
+                - name: spring-petclinic
+                  image: ${{ secrets.ECR_REPO_URL }}:latest
+                  ports:
+                  - containerPort: 8080
+          EOF
+
+      - name: Update Kubernetes deployment image
         run: |
           kubectl set image deployment/spring-petclinic spring-petclinic=${{ secrets.ECR_REPO_URL }}:latest
+
+      - name: Rollout status
+        run: |
           kubectl rollout status deployment/spring-petclinic
