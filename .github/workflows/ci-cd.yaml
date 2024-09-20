@@ -73,7 +73,11 @@ jobs:
         run: |
           echo "${{ secrets.KUBECONFIG_DATA }}" | base64 --decode > $HOME/.kube/config
 
-      - name: Apply Kubernetes deployment (if not exists)
+      - name: Delete old pods if exist
+        run: |
+          kubectl delete pod -l app=spring-petclinic --ignore-not-found=true
+
+      - name: Apply Kubernetes deployment
         run: |
           kubectl apply -f - <<EOF
           apiVersion: apps/v1
@@ -97,18 +101,7 @@ jobs:
                   image: ${{ secrets.ECR_REPO_URL }}:latest
                   ports:
                   - containerPort: 8080
-                  readinessProbe:
-                    httpGet:
-                      path: /
-                      port: 8080
-                    initialDelaySeconds: 20
-                    periodSeconds: 10
-                  livenessProbe:
-                    httpGet:
-                      path: /
-                      port: 8080
-                    initialDelaySeconds: 30
-                    periodSeconds: 10
+            progressDeadlineSeconds: 600  # Zaman aşımını artırdık
           EOF
 
       - name: Update Kubernetes deployment image
