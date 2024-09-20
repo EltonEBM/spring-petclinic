@@ -1,4 +1,5 @@
 FROM openjdk:17-jdk-slim
-WORKDIR /app
+WORKDIR .
 EXPOSE 8080
-CMD ["java", "-jar", "app.jar"]
+CMD ["java", "-jar", "target/app.jar"]
+
