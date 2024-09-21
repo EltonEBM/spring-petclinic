@@ -4,11 +4,6 @@ on:
   push:
     branches:
       - main
-      - develop
-  pull_request:
-    branches:
-      - develop
-      - main
 
 env:
   AWS_REGION: us-east-1
@@ -101,13 +96,10 @@ jobs:
                   image: ${{ secrets.ECR_REPO_URL }}:latest
                   ports:
                   - containerPort: 8080
-            progressDeadlineSeconds: 1800  # Zaman aşımını artırdık
+            progressDeadlineSeconds: 3600  # Zaman aşımını artırdık
           EOF
 
       - name: Update Kubernetes deployment image
         run: |
           kubectl set image deployment/spring-petclinic spring-petclinic=${{ secrets.ECR_REPO_URL }}:latest
 
-      - name: Rollout status
-        run: |
-          kubectl rollout status deployment/spring-petclinic
