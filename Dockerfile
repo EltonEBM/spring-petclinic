@@ -1,5 +1,6 @@
 FROM openjdk:17-jdk-slim
-WORKDIR .
+WORKDIR /app
+COPY ./target/* /elton
 EXPOSE 8080
-CMD ["java", "-jar", "target/app.jar"]
+CMD ["java", "-jar", "/app/elton/*.jar"]
 
