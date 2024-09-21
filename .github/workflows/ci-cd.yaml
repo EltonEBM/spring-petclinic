@@ -24,7 +24,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Build the application
-        run: ./mvnw clean package
+        run: ./mvnw package
 
       - name: Log in to Amazon ECR
         id: ecr_login
