@@ -37,11 +37,11 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t $IMAGE_NAME:latest .
-          docker tag $IMAGE_NAME:latest ${{ secrets.ECR_REPO_URL }}:latest
+          docker tag $IMAGE_NAME:latest 908576484718.dkr.ecr.us-east-1.amazonaws.com/spring-petclinic:latest
 
       - name: Push to ECR
         run: |
-          docker push ${{ secrets.ECR_REPO_URL }}:latest
+          docker push 908576484718.dkr.ecr.us-east-1.amazonaws.com/spring-petclinic:latest
 
   deploy:
     runs-on: ubuntu-latest
@@ -93,13 +93,29 @@ jobs:
               spec:
                 containers:
                 - name: spring-petclinic
-                  image: ${{ secrets.ECR_REPO_URL }}:latest
+                  image: 908576484718.dkr.ecr.us-east-1.amazonaws.com/spring-petclinic:latest
                   ports:
                   - containerPort: 8080
-            progressDeadlineSeconds: 3600  # Zaman aşımını artırdık
+            progressDeadlineSeconds: 3600  # Timeout increased
           EOF
 
       - name: Update Kubernetes deployment image
         run: |
-          kubectl set image deployment/spring-petclinic spring-petclinic=${{ secrets.ECR_REPO_URL }}:latest
+          kubectl set image deployment/spring-petclinic spring-petclinic=908576484718.dkr.ecr.us-east-1.amazonaws.com/spring-petclinic:latest
 
+      - name: Apply Kubernetes service
+        run: |
+          kubectl apply -f - <<EOF
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: spring-petclinic-service
+          spec:
+            selector:
+              app: spring-petclinic
+            ports:
+              - protocol: TCP
+                port: 80
+                targetPort: 8080
+            type: LoadBalancer
+          EOF
