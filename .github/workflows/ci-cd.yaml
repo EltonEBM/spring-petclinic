@@ -26,6 +26,9 @@ jobs:
       - name: Build the application
         run: ./mvnw package
 
+      - name: change file
+        run: mv ./target/*.jar ./target/app.jar
+
       - name: Log in to Amazon ECR
         id: ecr_login
         uses: aws-actions/amazon-ecr-login@v1
