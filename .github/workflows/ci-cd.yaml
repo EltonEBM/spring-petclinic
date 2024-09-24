@@ -1,4 +1,4 @@
-name: Maven Cache Testing Pipeline
+name: Maven Cache Optimized Pipeline
 
 on:
   push:
@@ -28,12 +28,21 @@ jobs:
           path: ~/.m2/repository   # Cache Maven's local repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}  # Cache key based on OS and pom.xml
           restore-keys: |
-            ${{ runner.os }}-maven-  # Restore from the closest matching cache if an exact match is unavailable
+            ${{ runner.os }}-maven-  # Restore from closest matching cache if an exact match is unavailable
 
-      # Step 4: Build the Maven project
+      # Step 4: Cache build output (target directory)
+      - name: Cache build output
+        uses: actions/cache@v3
+        with:
+          path: target  # Cache the target directory (output of Maven build)
+          key: ${{ runner.os }}-build-${{ hashFiles('**/pom.xml') }}-${{ hashFiles('**/src/**') }}  # Cache key based on OS, pom.xml, and source code
+          restore-keys: |
+            ${{ runner.os }}-build-${{ hashFiles('**/pom.xml') }}  # Restore from cache if pom.xml matches
+
+      # Step 5: Build the Maven project
       - name: Build the application
         run: ./mvnw clean package
 
-      # Step 5: Display the Maven version and build summary (Optional)
+      # Step 6: Display the Maven version and build summary (Optional)
       - name: Display Maven version
         run: ./mvnw --version
