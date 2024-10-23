@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        AWS_ECR_REPO_NAME = 'spring-petclinic'  // Replace with your ECR repository name
+        AWS_ECR_REPO_NAME = 'spring'  // Replace with your ECR repository name
         AWS_REGION = 'us-east-1'                      // Replace with your AWS region
         DOCKER_IMAGE = "${AWS_ECR_REPO_NAME}:${env.BUILD_NUMBER}"
         AWS_CREDENTIALS_ID = 'aws-credentials-id'     // Jenkins credentials ID for AWS
