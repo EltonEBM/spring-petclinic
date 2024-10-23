@@ -1,6 +1,7 @@
 FROM openjdk:17-jdk-slim
 WORKDIR /app
-COPY ./target/* elton/
+RUN ./mvnw package
+COPY . .
 EXPOSE 8080
-CMD ["java", "-jar", "/app/elton/app.jar"]
+CMD ["java", "-jar", "/app/target/*.jar"]
 
